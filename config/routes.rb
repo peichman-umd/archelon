@@ -65,6 +65,7 @@ Rails.application.routes.draw do # rubocop:disable Metrics/BlockLength
   resources :import_jobs do
     collection do
       post ':id/import', to: 'import_jobs#import', as: 'perform_import'
+      get ':id/metadata', to: 'import_jobs#metadata', as: 'metadata'
     end
     member do
       get 'status_update', to: 'import_jobs#status_update', as: 'status_update'

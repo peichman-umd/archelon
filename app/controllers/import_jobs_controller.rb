@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
+require 'csv'
+
 class ImportJobsController < ApplicationController # rubocop:disable Metrics/ClassLength
-  before_action :set_import_job, only: %i[update show edit import status_update]
+  before_action :set_import_job, only: %i[update show edit import status_update metadata]
   before_action :cancel_workflow?, only: %i[create update]
   helper_method :status_text
   skip_before_action :authenticate, only: %i[status_update]
@@ -102,6 +104,10 @@ class ImportJobsController < ApplicationController # rubocop:disable Metrics/Cla
     @import_job.stage = 'import'
     @import_job.save!
     redirect_to action: 'index', status: :see_other
+  end
+
+  def metadata
+    @metadata = CSV.new(@import_job.metadata_file.download)
   end
 
   # Generates status text display for the GUI
