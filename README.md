@@ -305,13 +305,28 @@ See [docs/ActionCable.md](docs/ActionCable.md) for more information.
 
 *Experimental support for Resque as the ActiveJob adapter*
 
-To run a Redis instance via Docker:
+Archelon is configured to use the Resque queue adapter in production. To
+enable Reque for development:
+
+1) Edit the "config/environments/development.rb" file, changing:
+
+```
+config.active_job.queue_adapter = :inline
+```
+
+to
+
+```
+config.active_job.queue_adapter = :resque
+```
+
+2) Run a Redis instance via Docker:
 
 ```
 docker run --rm --name archelon-redis -p 6379:6379 redis
 ```
 
-To run the Resque worker Rake task:
+3) Run the Resque worker Rake task:
 
 ```
 LOGGING=1 QUEUE=* bundle exec rails resque:work
