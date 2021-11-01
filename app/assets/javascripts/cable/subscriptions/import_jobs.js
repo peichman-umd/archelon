@@ -2,7 +2,7 @@ $(document).ready(function() {
   // subscribe to all relevant import jobs on this page
   document.querySelectorAll('.import-job[data-subscribe="true"]').forEach(function(importJobRow) {
     const {importJobId} = importJobRow.dataset;
-    App.cable.subscriptions.create({channel: 'ImportJobsChannel', id: importJobId}, {
+    App.cable.subscriptions.create({channel: 'ImportJobsChannel', classname: 'ImportJob', id: importJobId}, {
       connected: function() {
         console.log('Subscription confirmed for ImportJob ' + importJobId);
         this.perform('import_job_status_check', {jobId: importJobId});
