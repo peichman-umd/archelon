@@ -10,7 +10,11 @@ class PlastronExceptionMessage < PlastronMessage
     false
   end
 
-  def parse_errors(_resource_id)
-    [{ error: @exception_msg }]
+  def job_state
+    'exception'
+  end
+
+  def error_message
+    @exception_msg
   end
 end

@@ -123,6 +123,8 @@ GEM
       i18n (>= 0.7)
     faraday (1.0.1)
       multipart-post (>= 1.2, < 3)
+    faraday_middleware (1.2.0)
+      faraday (~> 1.0)
     ffi (1.12.2)
     fugit (1.5.2)
       et-orbi (~> 1.1, >= 1.1.8)
@@ -428,6 +430,7 @@ DEPENDENCIES
   dotenv-rails
   faker (~> 1.8)
   faraday (~> 1.0)
+  faraday_middleware (~> 1.2)
   http (~> 2.2.2)
   jbuilder
   jquery-rails

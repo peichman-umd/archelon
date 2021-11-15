@@ -21,6 +21,10 @@ class PlastronMessage
     @headers.key?(:PlastronJobError)
   end
 
+  def error_message
+    @headers.fetch(:PlastronJobError, '')
+  end
+
   def ok?
     !error?
   end

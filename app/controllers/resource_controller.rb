@@ -10,23 +10,18 @@ class ResourceController < ApplicationController
     @page_title = "Editing: \"#{@title}\""
   end
 
-  def update # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-    if sparql_update.empty?
-      # count an empty update as success
-      flash[:notice] = t('resource_update_successful')
-      render json: update_complete
-    else
-      response = send_to_plastron(@id, @resource[:content_model_name], sparql_update)
+  def update
+    # count an empty update as success
+    return render success if sparql_update.empty?
 
-      if response.ok? && response.state == 'update_complete'
-        flash[:notice] = t('resource_update_successful')
-        return render json: update_complete
-      end
+    # send the update
+    response = send_to_plastron(@id, @resource[:content_model_name], sparql_update)
 
-      @errors = response.parse_errors(@id)
-      error_display = render_to_string template: 'resource/_error_display', layout: false
-      render json: { state: 'update_failed', errorHtml: error_display, errors: @errors }
-    end
+    # update passed validation and was applied
+    return render success if response.status == 204
+
+    # validation or system errors
+    render failure response
   end
 
   private
@@ -36,36 +31,15 @@ class ResourceController < ApplicationController
       @resource = ResourceService.resource_with_model(@id)
     end
 
-    def send_to_plastron(id, model, sparql_update) # rubocop:disable Metrics/MethodLength
-      params_to_skip = %w[utf8 authenticity_token submit controller action]
-      submission = params.to_unsafe_h
-      params_to_skip.each { |key| submission.delete(key) }
+    def send_to_plastron(id, model, sparql_update)
+      plastron_rest_base_url = ENV['PLASTRON_REST_BASE_URL']
+      repo_path = '/' + id.gsub(FCREPO_BASE_URL, '')
+      update_url = plastron_rest_base_url + 'resources' + repo_path + '?model=' + model.to_s
 
-      Rails.logger.debug("Sending SPARQL query to Plastron: '#{sparql_update}'")
-
-      body = {
-        uris: [id],
-        sparql_update: sparql_update
-      }
-
-      # Send synchronously to STOMP
-      begin
-        stomp_message = StompService.synchronous_message(:jobs_synchronous, body.to_json, update_headers(model))
-        return PlastronMessage.new(stomp_message)
-      rescue MessagingError => e
-        return PlastronExceptionMessage.new(e.message)
+      Faraday.new { |f| f.response :json }.patch(update_url) do |request|
+        request.headers['Content-Type'] = 'application/sparql-update'
+        request.body = sparql_update
       end
-    end
-
-    def update_headers(model)
-      {
-        PlastronCommand: 'update',
-        'PlastronArg-on-behalf-of': current_user.cas_directory_id,
-        'PlastronArg-no-transactions': 'True',
-        'PlastronArg-validate': 'True',
-        'PlastronArg-model': model,
-        'PlastronJobId': "SYNCHRONOUS-#{SecureRandom.uuid}"
-      }
     end
 
     def update_complete
@@ -83,5 +57,22 @@ class ResourceController < ApplicationController
       return '' if delete_statements.empty? && insert_statements.empty?
 
       @sparql_update = "DELETE {\n#{delete_statements.join} } INSERT {\n#{insert_statements.join} } WHERE {}"
+    end
+
+    def success
+      flash[:notice] = t('resource_update_successful')
+      { json: update_complete }
+    end
+
+    def failure(response)
+      @errors = if response.body['title'] == 'Content-model validation failed'
+                  # validation errors
+                  response.body['validation_errors']
+                else
+                  # other system errors
+                  ['System error: ' + response.body['detail']]
+                end
+      error_display = render_to_string template: 'resource/_error_display', layout: false
+      { json: { state: 'update_failed', errorHtml: error_display, errors: @errors } }
     end
 end

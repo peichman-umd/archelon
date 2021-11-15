@@ -31,15 +31,17 @@ $(document).ready(function() {
     }
 
     errorDiv.innerHTML = errorHtml;
-    errors.forEach( error => {
-      let field_name = error['name'];
-      if (field_name) {
-        let fields = document.getElementsByName(field_name);
-        fields.forEach(field => {
-          field.classList.add(errorClass);
-        });
-      }
-    });
+    if (errors) {
+      errors.forEach( error => {
+        let field_name = error[0];
+        if (field_name) {
+          let fields = document.getElementsByName(field_name);
+          fields.forEach(field => {
+            field.classList.add(errorClass);
+          });
+        }
+      });
+    }
     window.scrollTo(0, 0);
   }
 
