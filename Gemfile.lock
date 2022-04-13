@@ -1,3 +1,9 @@
+PATH
+  remote: ../../ping-engine
+  specs:
+    ping (0.1.0)
+      rails (~> 5.2.6, >= 5.2.6.3)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -438,6 +444,7 @@ DEPENDENCIES
   net-ldap (~> 0.16.1)
   omniauth-cas (~> 1.1.1)
   pg
+  ping!
   puma (>= 4.3.11)
   rails (~> 5.2.6.2)
   rails-controller-testing
