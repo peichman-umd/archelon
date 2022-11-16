@@ -25,11 +25,7 @@ module ApplicationHelper # rubocop:disable Metrics/ModuleLength
   end
 
   def repo_path(url)
-    url.slice(FCREPO_BASE_URL.size, url.size)
-  end
-
-  def iiif_base_url
-    IIIF_BASE_URL
+    url.slice(REPO_EXTERNAL_URL.size, url.size)
   end
 
   def from_subquery(subquery_field, args)
@@ -101,7 +97,7 @@ module ApplicationHelper # rubocop:disable Metrics/ModuleLength
     if args[:value].is_a? Array
       args[:value].map { |v| format_extracted_text(value: v) }.join('... ').html_safe # rubocop:disable Rails/OutputSafety, Metrics/LineLength - I assume the .html_safe is intended
     else
-      # to strip out the embedded word corrdinates
+      # to strip out the embedded word coordinates
       coord_pattern = /\|\d+,\d+,\d+,\d+/
       # to remove {SOFT HYPHEN}{NEWLINE}
       hyphen_pattern = /\u{AD}\n/
@@ -109,19 +105,17 @@ module ApplicationHelper # rubocop:disable Metrics/ModuleLength
     end
   end
 
-  # remove the pairtree from the path
+  # remove the leading slash and the pairtree from the path
   def compress_path(path)
-    path.tr('/', ':').gsub(/:(..):(..):(..):(..):\1\2\3\4/, '::\1\2\3\4')
+    path.sub(%r{^/}, '').tr('/', ':').gsub(/:(..):(..):(..):(..):\1\2\3\4/, '::\1\2\3\4')
   end
 
-  def mirador_viewer_url(document, query)
-    template = Addressable::Template.new(
-      "#{IIIF_BASE_URL}viewer{/version}/mirador.html?manifest=fcrepo:{+id}{&iiifURLPrefix,q}"
-    )
-    template.expand(
-      version: MIRADOR_STATIC_VERSION,
-      id: compress_path(repo_path(document[:id])),
-      iiifURLPrefix: "#{IIIF_BASE_URL}manifests/",
+  def iiif_viewer_url(uri, query)
+    Addressable::Template.new(
+      "#{IIIF_VIEWER_URL}?manifest={+manifest}{&iiifURLPrefix,q}"
+    ).expand(
+      manifest: 'fcrepo:' + compress_path(repo_path(uri)),
+      iiifURLPrefix: IIIF_MANIFESTS_URL,
       q: query
     ).to_s
   end
@@ -129,7 +123,7 @@ module ApplicationHelper # rubocop:disable Metrics/ModuleLength
   def link_to_edit(resource)
     return unless can? :edit, resource
 
-    link_to 'Edit', { action: :edit, id: resource }, class: 'btn btn-sm btn-success'
+    link_to 'Edit', resource_edit_path(resource), class: 'btn btn-sm btn-success'
   end
 
   def link_to_delete(resource)
